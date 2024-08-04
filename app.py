@@ -6,6 +6,8 @@ from prettytable import DOUBLE_BORDER
 import platform
 import subprocess
 import argparse
+import GPUtil
+
 
 # Units of memory sizes
 size = ["bytes", "KB", "MB", "GB", "TB"]
@@ -48,6 +50,7 @@ stop = args.stop
 
 
 def check_platform(os_name):
+    global command
     print(f"\nOperating System: {os_name}")
     if os_name == "Windows":
         command = "cls"
@@ -150,6 +153,37 @@ def display_ping_stats(
     except Exception as e:
         print(f"\nError getting ping stats: {e}")
 
+    # Display GPU info
+
+
+def display_gpu_stats():
+    try:
+        gpus = GPUtil.getGPUs()
+        gpu_table = PrettyTable()
+        gpu_table.field_names = [
+            "GPU Name",
+            "Memory Total",
+            "Memory Free",
+            "Memory Used",
+            "GPU Load",
+        ]
+
+        for gpu in gpus:
+            gpu_table.add_row(
+                [
+                    gpu.name,
+                    f"{gpu.memoryTotal}MB",
+                    f"{gpu.memoryFree}MB",
+                    f"{gpu.memoryUsed}MB",
+                    f"{gpu.load*100:.2f}%",
+                ]
+            )
+
+        print(f"\nGPU stats\n{gpu_table}")
+
+    except Exception as e:
+        print(f"\nError getting GPU stats: {e}")
+
 
 # psutil.net_io_counters() returns network I/O statistics as a namedtuple
 netStats1 = psutil.net_io_counters()
@@ -162,6 +196,7 @@ dataRecv = netStats1.bytes_recv
 def update_stats():
     os.system(command)
     check_platform(platform.system())
+    display_gpu_stats()
     display_usage(psutil.cpu_percent(), psutil.virtual_memory().percent)
     display_network_stats()
     display_ping_stats(ping_count, host=ping_host)
